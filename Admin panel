@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AB LITER ADMIN PANEL</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        :root { --primary: #00f2fe; --bg: #0a0a0a; --card: #161616; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: auto; background: var(--card); padding: 25px; border-radius: 15px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h1 { color: var(--primary); text-align: center; text-transform: uppercase; letter-spacing: 2px; }
+        .input-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #aaa; }
+        input, select { width: 100%; padding: 12px; background: #222; border: 1px solid #444; color: white; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; background: linear-gradient(45deg, #00f2fe, #4facfe); border: none; color: black; font-weight: bold; border-radius: 8px; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        button:hover { opacity: 0.9; transform: translateY(-2px); }
+        .key-list { margin-top: 30px; }
+        .key-item { background: #222; padding: 15px; border-radius: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--primary); }
+        .delete-btn { background: #ff4b2b; color: white; width: auto; padding: 8px 15px; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>AB LITER ADMIN</h1>
+    
+    <div class="input-group">
+        <label>LICENSE KEY</label>
+        <input type="text" id="keyInput" placeholder="Enter Key (e.g. AB-1234)">
+    </div>
+
+    <div class="input-group">
+        <label>DURATION</label>
+        <select id="durationInput">
+            <option value="1">1 Day</option>
+            <option value="7">7 Days</option>
+            <option value="30">30 Days</option>
+            <option value="365">1 Year</option>
+        </select>
+    </div>
+
+    <button onclick="generateKey()">CREATE LICENSE KEY</button>
+
+    <div class="key-list" id="keyList">
+        </div>
+</div>
+
+<script>
+    // آپ کا درست فائر بیس لنک یہاں ایڈٹ کر دیا گیا ہے
+    const firebaseConfig = {
+        databaseURL: "https://ab-liter-server-default-rtdb.firebaseio.com/"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    function generateKey() {
+        const key = document.getElementById('keyInput').value;
+        const days = document.getElementById('durationInput').value;
+        
+        if(!key) return alert("Please enter a key!");
+
+        db.ref('keys/' + key).set({
+            key: key,
+            duration: days,
+            status: "active",
+            createdAt: Date.now()
+        }).then(() => {
+            alert("Key Generated Successfully!");
+            document.getElementById('keyInput').value = "";
+        });
+    }
+
+    function loadKeys() {
+        db.ref('keys').on('value', (snapshot) => {
+            const list = document.getElementById('keyList');
+            list.innerHTML = "<h3 style='color:var(--primary)'>ACTIVE KEYS</h3>";
+            snapshot.forEach((child) => {
+                const data = child.val();
+                list.innerHTML += `
+                    <div class="key-item">
+                        <div>
+                            <strong>${data.key}</strong><br>
+                            <small style="color:#888">${data.duration} Days</small>
+                        </div>
+                        <button class="delete-btn" onclick="deleteKey('${data.key}')">REMOVE</button>
+                    </div>
+                `;
+            });
+        });
+    }
+
+    function deleteKey(keyId) {
+        if(confirm("Delete this key?")) {
+            db.ref('keys/' + keyId).remove();
+        }
+    }
+
+    window.onload = loadKeys;
+</script>
+
+</body>
+</html>
