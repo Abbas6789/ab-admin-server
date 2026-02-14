@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ur">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AB LITER | Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-body: #080a0c;
+            --bg-card: #111418;
+            --neon-blue: #00d2ff;
+            --neon-green: #00ff88;
+            --neon-red: #ff3e3e;
+            --text-main: #e1e1e1;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Sidebar simple version for mobile */
+        .header-nav {
+            background: var(--bg-card);
+            padding: 15px;
+            border-bottom: 1px solid #222;
+            text-align: center;
+        }
+
+        .header-nav h2 { color: var(--neon-blue); margin: 0; font-size: 20px; }
+
+        /* Main Content */
+        .main-content { padding: 20px; }
+
+        .header-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid #222;
+            text-align: center;
+        }
+
+        .stat-card i { font-size: 24px; color: var(--neon-blue); margin-bottom: 8px; }
+        .stat-card h3 { margin: 5px 0; font-size: 20px; }
+        .stat-card p { color: #888; font-size: 12px; margin: 0; }
+
+        /* Sections */
+        .admin-section {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid #222;
+            margin-bottom: 20px;
+        }
+
+        .admin-section h3 { font-size: 16px; margin-top: 0; color: var(--neon-blue); }
+
+        label { display: block; margin-bottom: 8px; font-size: 13px; color: #aaa; }
+        select, input {
+            width: 100%;
+            padding: 12px;
+            background: #080a0c;
+            border: 1px solid #333;
+            color: white;
+            border-radius: 8px;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+        }
+
+        .btn-action {
+            background: var(--neon-blue);
+            color: black;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: 0.3s;
+        }
+
+        /* Key Table */
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+        th { text-align: left; padding: 10px; color: #555; border-bottom: 1px solid #222; }
+        td { padding: 10px; border-bottom: 1px solid #1a1a1a; }
+        .status-active { color: var(--neon-green); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="header-nav">
+        <h2>AB LITER ADMIN</h2>
+    </div>
+
+    <div class="main-content">
+        <div class="header-stats">
+            <div class="stat-card">
+                <i class="fas fa-users"></i>
+                <h3>1,240</h3>
+                <p>صارفین</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-bolt" style="color: var(--neon-green);"></i>
+                <h3 id="accuracy-val">98%</h3>
+                <p>ایکوریسی</p>
+            </div>
+        </div>
+
+        <div class="admin-section">
+            <h3><i class="fas fa-plus-circle"></i> نیو لائسنس کی (Key)</h3>
+            <label>ٹائم ڈیوریشن</label>
+            <select id="key-time">
+                <option value="1">24 گھنٹے (Trial)</option>
+                <option value="7">7 دن (Weekly)</option>
+                <option value="30">30 دن (Premium)</option>
+            </select>
+            
+            <input type="text" id="generated-key" readonly placeholder="Key یہاں نظر آئے گی">
+            
+            <button class="btn-action" onclick="generateKey()">GENERATE NEW KEY</button>
+        </div>
+
+        <div class="admin-section">
+            <h3><i class="fas fa-sliders-h"></i> سگنل سیٹنگز</h3>
+            <label>ایکوریسی سیٹ کریں: <span id="range-val" style="color: var(--neon-blue);">98%</span></label>
+            <input type="range" min="50" max="99" value="98" style="accent-color: var(--neon-blue);" oninput="updateAcc(this.value)">
+            
+            <button class="btn-action" style="background: var(--neon-green); margin-top: 10px;">SAVE SETTINGS</button>
+        </div>
+
+        <div class="admin-section">
+            <h3><i class="fas fa-history"></i> حالیہ کیز (Recent)</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>لائسنس کی</th>
+                            <th>اسٹیٹس</th>
+                        </tr>
+                    </thead>
+                    <tbody id="key-table-body">
+                        <tr>
+                            <td>AB-V4-9921-X9</td>
+                            <td class="status-active">ACTIVE</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function generateKey() {
+            const prefix = "AB-LITER-";
+            const random = Math.random().toString(36).substring(2, 10).toUpperCase();
+            const fullKey = prefix + random;
+            document.getElementById('generated-key').value = fullKey;
+            
+            const table = document.getElementById('key-table-body');
+            const row = `<tr><td>${fullKey}</td><td class="status-active">READY</td></tr>`;
+            table.innerHTML = row + table.innerHTML;
+        }
+
+        function updateAcc(val) {
+            document.getElementById('range-val').innerText = val + "%";
+            document.getElementById('accuracy-val').innerText = val + "%";
+        }
+    </script>
+</body>
+</html>
